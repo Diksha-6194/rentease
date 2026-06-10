@@ -8,6 +8,7 @@ services:
   - type: web
     name: rentease-backend
     env: python
+    plan: free
     buildCommand: "./backend/build.sh"
     startCommand: "cd backend && gunicorn rentease_backend.wsgi:application"
     envVars:

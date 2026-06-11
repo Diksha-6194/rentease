@@ -29,22 +29,24 @@ class PropertySerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'landlord', 'created_at', 'updated_at')
 
     def create(self, validated_data):
-        # DRF ListField sometimes drops multipart files, so we extract from request.FILES safely
         request = self.context.get('request')
         uploaded_images = request.FILES.getlist('uploaded_images') if request else []
-        # Pop from validated_data just in case it was parsed
         validated_data.pop('uploaded_images', None)
         
-        property = Property.objects.create(**validated_data)
-        
-        for index, image in enumerate(uploaded_images):
-            PropertyImage.objects.create(
-                property=property, 
-                image_url=image,
-                is_primary=(index == 0) # Make first image primary
-            )
+        try:
+            property = Property.objects.create(**validated_data)
             
-        return property
+            for index, image in enumerate(uploaded_images):
+                PropertyImage.objects.create(
+                    property=property, 
+                    image_url=image,
+                    is_primary=(index == 0)
+                )
+                
+            return property
+        except Exception as e:
+            import traceback
+            raise serializers.ValidationError({"error": str(e), "traceback": traceback.format_exc()})
 
     def update(self, instance, validated_data):
         request = self.context.get('request')
